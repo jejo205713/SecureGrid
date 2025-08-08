@@ -2,8 +2,6 @@
 
 **Author:** Jejo J
 
----
-
 ## 📌 Problem Statement
 
 Power grids are the backbone of modern civilization — but they’re increasingly targeted by sophisticated cyberattacks.
@@ -17,8 +15,6 @@ From ransomware to malware-injected IoT devices, these threats can cause **massi
 * **Brazil Blackout (2007)** – Allegedly caused by cyber intrusions, affecting millions.
 
 These attacks prove one thing: **critical infrastructure needs next-level security**.
-
----
 
 ## 💡 About SecureGrid
 
