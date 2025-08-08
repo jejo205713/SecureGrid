@@ -1,105 +1,88 @@
 #!/usr/bin/env python3
 """
-GridSentinel: Main Orchestration Script
----------------------------------------
-This script is the brain of the prototype.
-It coordinates data capture, anomaly detection, automated response,
-and dashboard updates for smart power grid cybersecurity.
+SecureGrid - Main Orchestrator
+Author: JEJO J
+Description:
+    Master controller for SecureGrid – an AI-driven, blockchain-secured
+    smart grid anomaly detection and response system.
 """
 
-import sys
-import time
+import asyncio
 import logging
-import threading
-from queue import Queue, Empty
-from datetime import datetime
+import signal
+import sys
+from capture import capture_data
+from detection import detect_anomalies
+from response import respond_to_threat
+from dashboard import start_dashboard
 
-# Import project modules
-import capture
-import detection
-import response
-import dashboard
-
-# -----------------------------
-# Logging Configuration
-# -----------------------------
+# ===== Logging Setup =====
 logging.basicConfig(
-    filename="gridsentinel.log",
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    format="[%(asctime)s] %(levelname)s | %(message)s",
+    handlers=[logging.StreamHandler()]
 )
+logger = logging.getLogger("SecureGrid")
 
-# -----------------------------
-# Master Controller Class
-# -----------------------------
-class GridSentinelController:
-    def __init__(self):
-        self.event_queue = Queue()
-        self.shutdown_flag = threading.Event()
 
-    def start_capture(self):
-        """Starts packet capture in a separate thread."""
-        def capture_thread():
-            try:
-                for packet in capture.start_capture():
-                    if self.shutdown_flag.is_set():
-                        break
-                    self.event_queue.put(packet)
-            except Exception as e:
-                logging.error(f"Capture module error: {e}")
-        
-        threading.Thread(target=capture_thread, daemon=True).start()
-        logging.info("Capture module started.")
+# ===== Graceful Shutdown =====
+shutdown_flag = False
 
-    def start_detection(self):
-        """Starts detection loop in a separate thread."""
-        def detection_thread():
-            try:
-                while not self.shutdown_flag.is_set():
-                    try:
-                        packet = self.event_queue.get(timeout=1)
-                        result = detection.analyze_packet(packet)
-                        if result.get("alert"):
-                            logging.warning(f"Threat detected: {result}")
-                            response.take_action(result)
-                            dashboard.update_dashboard(result)
-                        self.event_queue.task_done()
-                    except Empty:
-                        continue
-            except Exception as e:
-                logging.error(f"Detection module error: {e}")
-        
-        threading.Thread(target=detection_thread, daemon=True).start()
-        logging.info("Detection module started.")
+def handle_shutdown(signal_received, frame):
+    global shutdown_flag
+    logger.warning("Shutdown signal received. Stopping SecureGrid...")
+    shutdown_flag = True
 
-    def run(self):
-        """Main control loop."""
-        logging.info("GridSentinel is starting...")
-        print("⚡ GridSentinel Master Controller ⚡")
-        print("Starting modules...")
 
-        self.start_capture()
-        self.start_detection()
+# ===== Orchestration Logic =====
+async def securegrid_loop():
+    """Main AI-driven security loop"""
+    logger.info("🔒 SecureGrid is live. Monitoring power grid...")
 
+    while not shutdown_flag:
         try:
-            while not self.shutdown_flag.is_set():
-                time.sleep(0.5)
-        except KeyboardInterrupt:
-            logging.info("Shutdown signal received (Ctrl+C).")
-            self.shutdown()
+            # 1️⃣ Capture
+            data = await capture_data()
+            if not data:
+                logger.debug("No data captured this cycle.")
+                await asyncio.sleep(1)
+                continue
 
-    def shutdown(self):
-        """Gracefully shuts down all modules."""
-        logging.info("Shutting down GridSentinel...")
-        self.shutdown_flag.set()
-        time.sleep(1)  # Allow threads to exit
-        logging.info("Shutdown complete.")
-        print("✅ GridSentinel stopped.")
+            # 2️⃣ Detection
+            threats = detect_anomalies(data)
+            if threats:
+                logger.warning(f"⚠ Threats detected: {threats}")
 
-# -----------------------------
-# Entry Point
-# -----------------------------
+                # 3️⃣ Response
+                for threat in threats:
+                    respond_to_threat(threat)
+            else:
+                logger.info("✅ No anomalies detected this cycle.")
+
+        except Exception as e:
+            logger.error(f"Main loop error: {e}")
+
+        await asyncio.sleep(1)  # Prevent CPU overload
+
+    logger.info("SecureGrid shutdown complete.")
+
+
+# ===== Entry Point =====
 if __name__ == "__main__":
-    controller = GridSentinelController()
-    controller.run()
+    signal.signal(signal.SIGINT, handle_shutdown)
+    signal.signal(signal.SIGTERM, handle_shutdown)
+
+    try:
+        # Start dashboard in background
+        logger.info("Starting dashboard...")
+        import threading
+        threading.Thread(target=start_dashboard, daemon=True).start()
+
+        # Run main loop
+        asyncio.run(securegrid_loop())
+
+    except KeyboardInterrupt:
+        handle_shutdown(None, None)
+    except Exception as e:
+        logger.critical(f"Fatal error: {e}")
+        sys.exit(1)
