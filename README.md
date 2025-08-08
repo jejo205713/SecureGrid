@@ -121,7 +121,3 @@ SecureGrid is for **educational and research purposes only**.
 Deploying to live production environments without regulatory approval is **not recommended**.
 
 ---
-
-```
-Do you want me to add that?
-```
