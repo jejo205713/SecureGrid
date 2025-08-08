@@ -61,8 +61,8 @@ SecureGrid/
 git clone https://github.com/yourusername/SecureGrid.git
 cd SecureGrid
 
-# Install dependencies
-pip install -r requirements.txt
+# Install Script
+python3 install.py
 ```
 
 ---
