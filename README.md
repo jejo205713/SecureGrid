@@ -62,7 +62,8 @@ git clone https://github.com/yourusername/SecureGrid.git
 cd SecureGrid
 
 # Install Script
-python3 install.py
+chmod +x install.sh
+./install.sh
 ```
 
 ---
